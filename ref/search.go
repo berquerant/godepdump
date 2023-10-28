@@ -76,7 +76,7 @@ func newPkgNodeListMap(nodeList []def.Node) pkgNodeListMap {
 	}
 	var count int
 	for _, x := range result {
-		logx.Info("ref searcher loaded", logx.S("pkg", x[0].node.Pkg().PkgPath), logx.I("len", len(x)))
+		logx.Debug("ref searcher loaded", logx.S("pkg", x[0].node.Pkg().PkgPath), logx.I("len", len(x)))
 		count += len(x)
 	}
 	logx.Info("ref searcher loaded", logx.I("given", len(nodeList)), logx.I("accepted", count))

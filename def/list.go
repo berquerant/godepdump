@@ -72,7 +72,7 @@ func (l *lister) List(pkgs ...*packages.Package) []Node {
 	}()
 
 	for _, pkg := range pkgs {
-		logx.Info("def load", logx.S("package", pkg.PkgPath))
+		logx.Debug("def load", logx.S("package", pkg.PkgPath))
 		for _, f := range pkg.Syntax {
 			for _, decl := range f.Decls {
 				switch decl := decl.(type) {

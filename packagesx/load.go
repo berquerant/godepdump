@@ -30,7 +30,7 @@ const loadMode = packages.NeedTypesInfo | packages.NeedTypes | packages.NeedName
 	packages.NeedSyntax | packages.NeedImports
 
 func (l *loader) Load(ctx context.Context, patterns ...string) error {
-	logx.Info("load", logx.SS("patterns", patterns))
+	logx.Info("load package", logx.SS("patterns", patterns))
 
 	pkgs, err := packages.Load(&packages.Config{
 		Context: ctx,
@@ -42,9 +42,10 @@ func (l *loader) Load(ctx context.Context, patterns ...string) error {
 
 	l.pkgs = append(l.pkgs, pkgs...)
 	for _, p := range pkgs {
-		logx.Info("loaded", logx.S("package", p.PkgPath))
+		logx.Debug("loaded", logx.S("package", p.PkgPath))
 		l.pkgPathIndex[p.PkgPath] = p
 	}
+	logx.Info("loaded package", logx.I("count", len(l.pkgs)))
 	return nil
 }
 

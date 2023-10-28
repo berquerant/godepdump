@@ -22,11 +22,16 @@ func NewObject(pkgs ...*packages.Package) Object {
 type pkgObjectMap map[string]map[*ast.Ident]types.Object
 
 func newPkgObjectMap(pkgs []*packages.Package) pkgObjectMap {
-	d := make(map[string]map[*ast.Ident]types.Object, len(pkgs))
+	var (
+		d     = make(map[string]map[*ast.Ident]types.Object, len(pkgs))
+		count int
+	)
 	for _, pkg := range pkgs {
-		logx.Info("ref object loaded", logx.S("pkg", pkg.PkgPath))
+		logx.Debug("ref object loaded", logx.S("pkg", pkg.PkgPath))
 		d[pkg.ID] = pkg.TypesInfo.Defs
+		count += len(d[pkg.ID])
 	}
+	logx.Info("ref object loaded", logx.I("count", count))
 	return d
 }
 
