@@ -41,7 +41,7 @@ func SearchDecl(
 		Decl *decls.Decl       `json:"decl"`
 	}
 
-	for _, ident := range find.IdentFromPackage(name, loader.List()...) {
+	for ident := range find.IdentFromPackage(name, loader.List()...).C() {
 		r := Result{
 			Name: ident.Ident().String(),
 			Pkg:  display.NewPackage(ident.Pkg()),

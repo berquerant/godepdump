@@ -29,7 +29,7 @@ func SearchIdent(ctx context.Context, patterns []string, name string, analyzeLim
 		Type *display.Type     `json:"type"`
 	}
 
-	for _, ident := range find.IdentFromPackage(name, loader.List()...) {
+	for ident := range find.IdentFromPackage(name, loader.List()...).C() {
 		r := Result{
 			Name: ident.Ident().String(),
 			Pkg:  display.NewPackage(ident.Pkg()),

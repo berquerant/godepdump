@@ -6,32 +6,41 @@ import (
 	"go/types"
 
 	"github.com/berquerant/godepdump/astutil"
+	"github.com/berquerant/godepdump/chanx"
 	"golang.org/x/tools/go/packages"
 )
 
-func IdentFromFile(f *ast.File, identName string) (identList []*ast.Ident) {
-	ast.Inspect(f, func(n ast.Node) bool {
-		if id, ok := n.(*ast.Ident); ok {
-			if id.Name == identName {
-				identList = append(identList, id)
+func IdentFromFile(f *ast.File, identName string) chanx.Stream[*ast.Ident] {
+	resultC := make(chan *ast.Ident, 100)
+	go func() {
+		defer close(resultC)
+		ast.Inspect(f, func(n ast.Node) bool {
+			if id, ok := n.(*ast.Ident); ok {
+				if id.Name == identName {
+					resultC <- id
+				}
 			}
-		}
-		return true
-	})
-	return
+			return true
+		})
+	}()
+	return chanx.NewStream(resultC)
 }
 
 //go:generate go run github.com/berquerant/dataclass@v0.3.1 -type "IdentTuple" -field "Ident *ast.Ident|Pkg *packages.Package" -output ident_dataclass_generated.go
 
-func IdentFromPackage(identName string, pkgs ...*packages.Package) (identList []IdentTuple) {
-	for _, pkg := range pkgs {
-		for _, tree := range pkg.Syntax {
-			for _, ident := range IdentFromFile(tree, identName) {
-				identList = append(identList, NewIdentTuple(ident, pkg))
+func IdentFromPackage(identName string, pkgs ...*packages.Package) chanx.Stream[IdentTuple] {
+	resultC := make(chan IdentTuple)
+	go func() {
+		defer close(resultC)
+		for _, pkg := range pkgs {
+			for _, tree := range pkg.Syntax {
+				for ident := range IdentFromFile(tree, identName).C() {
+					resultC <- NewIdentTuple(ident, pkg)
+				}
 			}
 		}
-	}
-	return
+	}()
+	return chanx.NewStream(resultC)
 }
 
 func ValueSpecIndex(vs *ast.ValueSpec, pos token.Pos) (index int, found bool) {
