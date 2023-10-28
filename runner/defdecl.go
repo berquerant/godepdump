@@ -20,6 +20,7 @@ func ListDefDecls(ctx context.Context, patterns []string, analyzeLimit int) erro
 	type Result struct {
 		Kind  string            `json:"kind"`
 		Name  string            `json:"name"`
+		ID    string            `json:"id"`
 		Begin *display.Position `json:"begin"`
 		End   *display.Position `json:"end"`
 		Pkg   *display.Package  `json:"pkg"`
@@ -37,6 +38,7 @@ func ListDefDecls(ctx context.Context, patterns []string, analyzeLimit int) erro
 			return &Result{
 				Kind:  kind,
 				Name:  ident.String(),
+				ID:    obj.Id(),
 				Begin: display.NewPosition(node.Pos(), node.Pkg().Fset),
 				End:   display.NewPosition(node.End(), node.Pkg().Fset),
 				Pkg:   display.NewPackage(node.Pkg()),

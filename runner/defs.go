@@ -17,6 +17,7 @@ func ListDefs(ctx context.Context, patterns []string, analyzeLimit int) error {
 	analyzer := display.NewTypeAnalyzer(display.WithLimit(analyzeLimit))
 
 	type Result struct {
+		Name string            `json:"name`
 		ID   string            `json:"id"`
 		Pos  *display.Position `json:"pos"`
 		Type *display.Type     `json:"type"`
@@ -28,8 +29,8 @@ func ListDefs(ctx context.Context, patterns []string, analyzeLimit int) error {
 			p := display.NewPosition(ident.Pos(), pkg.Fset)
 			if obj == nil {
 				write.JSON(Result{
-					ID:  ident.String(),
-					Pos: p,
+					Name: ident.String(),
+					Pos:  p,
 				})
 				continue
 			}

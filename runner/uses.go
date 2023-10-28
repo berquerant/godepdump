@@ -18,6 +18,7 @@ func ListUses(ctx context.Context, patterns []string, analyzeLimit int) error {
 	analyzer := display.NewTypeAnalyzer(display.WithLimit(analyzeLimit))
 
 	type Result struct {
+		Name   string            `json:"name"`
 		ID     string            `json:"id"`
 		Pos    *display.Position `json:"pos"`
 		Pkg    *display.Package  `json:"pkg"`
@@ -34,12 +35,13 @@ func ListUses(ctx context.Context, patterns []string, analyzeLimit int) error {
 		)
 
 		v := Result{
-			ID:  ident.String(),
-			Pos: display.NewPosition(ident.Pos(), pkg.Fset),
-			Pkg: display.NewPackage(pkg),
+			Name: ident.String(),
+			Pos:  display.NewPosition(ident.Pos(), pkg.Fset),
+			Pkg:  display.NewPackage(pkg),
 		}
 		if obj != nil {
 			v.Type = analyzer.Analyze(obj.Type())
+			v.ID = obj.Id()
 
 			if objPkg := obj.Pkg(); objPkg != nil {
 				v.ObjPkg = display.NewPackageFromTypes(obj.Pkg())

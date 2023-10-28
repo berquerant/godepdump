@@ -34,6 +34,7 @@ func SearchDecl(
 
 	type Result struct {
 		Name string            `json:"name"`
+		ID   string            `json:"id"`
 		Pkg  *display.Package  `json:"pkg"`
 		Pos  *display.Position `json:"pos"`
 		Type *display.Type     `json:"type"`
@@ -47,6 +48,7 @@ func SearchDecl(
 			Pos:  display.NewPosition(ident.Ident().Pos(), ident.Pkg().Fset),
 		}
 		if obj, ok := objectMap.FindObj(ident.Pkg(), ident.Ident()); ok {
+			r.ID = obj.Id()
 			r.Type = analyzer.Analyze(obj.Type())
 		}
 		decl, err := builder.Build(r.Pkg.Path, ident.Ident().Pos())

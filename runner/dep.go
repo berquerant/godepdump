@@ -28,7 +28,7 @@ func ListDeps(ctx context.Context, patterns []string, analyzeLimit int) error {
 	)
 
 	type Use struct {
-		ID   string            `json:"id"`
+		Name string            `json:"name"`
 		Pos  *display.Position `json:"pos"`
 		Pkg  *display.Package  `json:"pkg"`
 		Decl *decls.Decl       `json:"decl"`
@@ -51,9 +51,9 @@ func ListDeps(ctx context.Context, patterns []string, analyzeLimit int) error {
 		result := func() *Result {
 			r := &Result{
 				Use: &Use{
-					ID:  useNode.Ident().String(),
-					Pos: display.NewPosition(useNode.Ident().Pos(), useNode.Pkg().Fset),
-					Pkg: display.NewPackage(useNode.Pkg()),
+					Name: useNode.Ident().String(),
+					Pos:  display.NewPosition(useNode.Ident().Pos(), useNode.Pkg().Fset),
+					Pkg:  display.NewPackage(useNode.Pkg()),
 				},
 				Def: &Def{
 					ID:   useNode.Obj().Id(),
@@ -66,7 +66,7 @@ func ListDeps(ctx context.Context, patterns []string, analyzeLimit int) error {
 					logx.Debug("use decl not found",
 						logx.Err(err),
 						logx.S("pkg", r.Use.Pkg.Path),
-						logx.S("ident", r.Use.ID),
+						logx.S("name", r.Use.Name),
 						logx.Any("pos", r.Use.Pos),
 					)
 				} else {

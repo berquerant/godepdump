@@ -22,6 +22,7 @@ func SearchIdent(ctx context.Context, patterns []string, name string, analyzeLim
 	)
 
 	type Result struct {
+		ID   string            `json:"id"`
 		Name string            `json:"name"`
 		Pkg  *display.Package  `json:"pkg"`
 		Pos  *display.Position `json:"pos"`
@@ -35,6 +36,7 @@ func SearchIdent(ctx context.Context, patterns []string, name string, analyzeLim
 			Pos:  display.NewPosition(ident.Ident().Pos(), ident.Pkg().Fset),
 		}
 		if obj, ok := objectMap.FindObj(ident.Pkg(), ident.Ident()); ok {
+			r.ID = obj.Id()
 			r.Type = analyzer.Analyze(obj.Type())
 		}
 
