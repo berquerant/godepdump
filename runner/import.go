@@ -8,9 +8,13 @@ import (
 	"github.com/berquerant/godepdump/write"
 )
 
-func ListImport(ctx context.Context, patterns []string) error {
+type ListImport struct {
+	Patterns []string
+}
+
+func (r *ListImport) Run(ctx context.Context) error {
 	loader := packagesx.New()
-	if err := loader.Load(ctx, patterns...); err != nil {
+	if err := loader.Load(ctx, r.Patterns...); err != nil {
 		return err
 	}
 

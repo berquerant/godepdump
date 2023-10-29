@@ -35,6 +35,9 @@ result:
   "dst": {"name": "os", "path": "os"}
 }`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runner.ListImport(cmd.Context(), getPatterns(args))
+		r := &runner.ListImport{
+			Patterns: getPatterns(args),
+		}
+		return r.Run(cmd.Context())
 	},
 }

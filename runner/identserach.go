@@ -2,7 +2,9 @@ package runner
 
 import (
 	"context"
+	"regexp"
 
+	"github.com/berquerant/godepdump/chanx"
 	"github.com/berquerant/godepdump/display"
 	"github.com/berquerant/godepdump/find"
 	"github.com/berquerant/godepdump/packagesx"
@@ -10,16 +12,32 @@ import (
 	"github.com/berquerant/godepdump/write"
 )
 
-func SearchIdent(ctx context.Context, patterns []string, name string, analyzeLimit int) error {
+type SearchIdent struct {
+	Patterns     []string
+	Name         *regexp.Regexp
+	AnalyzeLimit int
+	Exported     bool
+	PackageName  *regexp.Regexp
+}
+
+func (r *SearchIdent) Run(ctx context.Context) error {
 	loader := packagesx.New()
-	if err := loader.Load(ctx, patterns...); err != nil {
+	if err := loader.Load(ctx, r.Patterns...); err != nil {
 		return err
 	}
 
 	var (
 		objectMap = ref.NewObject(loader.List()...)
-		analyzer  = display.NewTypeAnalyzer(display.WithLimit(analyzeLimit))
+		analyzer  = display.NewTypeAnalyzer(display.WithLimit(r.AnalyzeLimit))
+		stream    = find.IdentFromPackage(r.Name, loader.List()...)
+		filters   = []chanx.Filter[find.IdentTuple]{
+			func(x find.IdentTuple) bool { return packageNameFilter(r.PackageName).Call(x.Pkg()) },
+			func(x find.IdentTuple) bool { return identExportedFilter(r.Exported).Call(x.Ident()) },
+		}
 	)
+	for _, f := range filters {
+		stream.Filter(f)
+	}
 
 	type Result struct {
 		ID   string            `json:"id"`
@@ -29,7 +47,7 @@ func SearchIdent(ctx context.Context, patterns []string, name string, analyzeLim
 		Type *display.Type     `json:"type"`
 	}
 
-	for ident := range find.IdentFromPackage(name, loader.List()...).C() {
+	for ident := range stream.C() {
 		r := Result{
 			Name: ident.Ident().String(),
 			Pkg:  display.NewPackage(ident.Pkg()),

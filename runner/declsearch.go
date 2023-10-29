@@ -2,7 +2,9 @@ package runner
 
 import (
 	"context"
+	"regexp"
 
+	"github.com/berquerant/godepdump/chanx"
 	"github.com/berquerant/godepdump/decls"
 	"github.com/berquerant/godepdump/def"
 	"github.com/berquerant/godepdump/display"
@@ -13,14 +15,17 @@ import (
 	"github.com/berquerant/godepdump/write"
 )
 
-func SearchDecl(
-	ctx context.Context,
-	patterns []string,
-	name string,
-	analyzeLimit int,
-) error {
+type SearchDecl struct {
+	Patterns     []string
+	Name         *regexp.Regexp
+	AnalyzeLimit int
+	Exported     bool
+	PackageName  *regexp.Regexp
+}
+
+func (r *SearchDecl) Run(ctx context.Context) error {
 	loader := packagesx.New()
-	if err := loader.Load(ctx, patterns...); err != nil {
+	if err := loader.Load(ctx, r.Patterns...); err != nil {
 		return err
 	}
 
@@ -28,9 +33,17 @@ func SearchDecl(
 		declList  = def.New().List(loader.List()...)
 		searcher  = ref.NewSearcher(declList)
 		objectMap = ref.NewObject(loader.List()...)
-		analyzer  = display.NewTypeAnalyzer(display.WithLimit(analyzeLimit))
+		analyzer  = display.NewTypeAnalyzer(display.WithLimit(r.AnalyzeLimit))
 		builder   = decls.New(loader, searcher, objectMap, analyzer)
+		stream    = find.IdentFromPackage(r.Name, loader.List()...)
+		filters   = []chanx.Filter[find.IdentTuple]{
+			func(x find.IdentTuple) bool { return packageNameFilter(r.PackageName).Call(x.Pkg()) },
+			func(x find.IdentTuple) bool { return identExportedFilter(r.Exported).Call(x.Ident()) },
+		}
 	)
+	for _, f := range filters {
+		stream.Filter(f)
+	}
 
 	type Result struct {
 		Name string            `json:"name"`
@@ -41,7 +54,7 @@ func SearchDecl(
 		Decl *decls.Decl       `json:"decl"`
 	}
 
-	for ident := range find.IdentFromPackage(name, loader.List()...).C() {
+	for ident := range stream.C() {
 		r := Result{
 			Name: ident.Ident().String(),
 			Pkg:  display.NewPackage(ident.Pkg()),

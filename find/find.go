@@ -3,20 +3,20 @@ package find
 import (
 	"go/ast"
 	"go/token"
-	"go/types"
+	"regexp"
 
 	"github.com/berquerant/godepdump/astutil"
 	"github.com/berquerant/godepdump/chanx"
 	"golang.org/x/tools/go/packages"
 )
 
-func IdentFromFile(f *ast.File, identName string) chanx.Stream[*ast.Ident] {
+func IdentFromFile(f *ast.File, identName *regexp.Regexp) chanx.Stream[*ast.Ident] {
 	resultC := make(chan *ast.Ident, 100)
 	go func() {
 		defer close(resultC)
 		ast.Inspect(f, func(n ast.Node) bool {
 			if id, ok := n.(*ast.Ident); ok {
-				if id.Name == identName {
+				if identName.MatchString(id.Name) {
 					resultC <- id
 				}
 			}
@@ -28,7 +28,7 @@ func IdentFromFile(f *ast.File, identName string) chanx.Stream[*ast.Ident] {
 
 //go:generate go run github.com/berquerant/dataclass@v0.3.1 -type "IdentTuple" -field "Ident *ast.Ident|Pkg *packages.Package" -output ident_dataclass_generated.go
 
-func IdentFromPackage(identName string, pkgs ...*packages.Package) chanx.Stream[IdentTuple] {
+func IdentFromPackage(identName *regexp.Regexp, pkgs ...*packages.Package) chanx.Stream[IdentTuple] {
 	resultC := make(chan IdentTuple)
 	go func() {
 		defer close(resultC)
@@ -65,9 +65,4 @@ func ValueSpecIndex(vs *ast.ValueSpec, pos token.Pos) (index int, found bool) {
 		}
 	}
 	return
-}
-
-func Object(pkg *packages.Package, ident *ast.Ident) (types.Object, bool) {
-	obj, ok := pkg.TypesInfo.Defs[ident]
-	return obj, ok
 }

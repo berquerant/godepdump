@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"regexp"
 
 	"github.com/berquerant/godepdump/runner"
 	"github.com/spf13/cobra"
@@ -10,10 +11,12 @@ import (
 func init() {
 	rootCmd.AddCommand(searchCmd)
 	setAnalyzeLimit(searchCmd)
+	setExported(searchCmd)
+	setPackageName(searchCmd)
 }
 
 var searchCmd = &cobra.Command{
-	Use:   "search ident|decl NAME [--analyzeLimit LIMIT] [patterns]",
+	Use:   "search ident|decl NAME [--analyzeLimit LIMIT] [--exported] [--package] [patterns]",
 	Short: "Search identifiers",
 	Long:  `Search identifiers by name.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,25 +29,31 @@ var searchCmd = &cobra.Command{
 
 		var (
 			command  = args[0]
-			name     = args[1]
+			name     = regexp.MustCompile(args[1])
 			patterns = getPatterns(args[2:])
 			limit    = int(getAnalyzeLimit(cmd))
+			exported = getExported(cmd)
+			pkgName  = getPackageName(cmd)
 		)
 		switch command {
 		case "ident":
-			return runner.SearchIdent(
-				cmd.Context(),
-				patterns,
-				name,
-				limit,
-			)
+			r := &runner.SearchIdent{
+				Patterns:     patterns,
+				Name:         name,
+				AnalyzeLimit: limit,
+				Exported:     exported,
+				PackageName:  pkgName,
+			}
+			return r.Run(cmd.Context())
 		case "decl":
-			return runner.SearchDecl(
-				cmd.Context(),
-				patterns,
-				name,
-				limit,
-			)
+			r := &runner.SearchDecl{
+				Patterns:     patterns,
+				Name:         name,
+				AnalyzeLimit: limit,
+				Exported:     exported,
+				PackageName:  pkgName,
+			}
+			return r.Run(cmd.Context())
 		default:
 			return errors.New("unknown subcommand")
 		}

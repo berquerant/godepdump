@@ -2,20 +2,41 @@ package runner
 
 import (
 	"context"
+	"regexp"
 
+	"github.com/berquerant/godepdump/chanx"
 	"github.com/berquerant/godepdump/display"
 	"github.com/berquerant/godepdump/packagesx"
 	"github.com/berquerant/godepdump/use"
 	"github.com/berquerant/godepdump/write"
 )
 
-func ListUses(ctx context.Context, patterns []string, analyzeLimit int) error {
+type ListUses struct {
+	Patterns     []string
+	AnalyzeLimit int
+	Exported     bool
+	PackageName  *regexp.Regexp
+	IdentName    *regexp.Regexp
+}
+
+func (r *ListUses) Run(ctx context.Context) error {
 	loader := packagesx.New()
-	if err := loader.Load(ctx, patterns...); err != nil {
+	if err := loader.Load(ctx, r.Patterns...); err != nil {
 		return err
 	}
 
-	analyzer := display.NewTypeAnalyzer(display.WithLimit(analyzeLimit))
+	var (
+		analyzer = display.NewTypeAnalyzer(display.WithLimit(r.AnalyzeLimit))
+		filters  = []chanx.Filter[use.Node]{
+			func(x use.Node) bool { return packageNameFilter(r.PackageName).Call(x.Pkg()) },
+			func(x use.Node) bool { return identExportedFilter(r.Exported).Call(x.Ident()) },
+			func(x use.Node) bool { return identNameFilter(r.IdentName).Call(x.Ident()) },
+		}
+		stream = use.New().List(loader.List()...)
+	)
+	for _, f := range filters {
+		stream.Filter(f)
+	}
 
 	type Result struct {
 		Name   string            `json:"name"`
@@ -27,7 +48,7 @@ func ListUses(ctx context.Context, patterns []string, analyzeLimit int) error {
 		ObjPos *display.Position `json:"objpos"`
 	}
 
-	for useNode := range use.New().List(loader.List()...).C() {
+	for useNode := range stream.C() {
 		var (
 			ident = useNode.Ident()
 			pkg   = useNode.Pkg()
