@@ -10,9 +10,6 @@ func (f Filter[T]) Call(t T) bool {
 }
 
 func (f Filter[T]) And(g Filter[T]) Filter[T] {
-	if f == nil {
-		return g
-	}
 	return func(t T) bool {
 		return f.Call(t) && g.Call(t)
 	}

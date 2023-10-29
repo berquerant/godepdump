@@ -31,7 +31,7 @@ func (s *stream[T]) C() <-chan T {
 }
 
 func (s *stream[T]) Filter(filter Filter[T]) Stream[T] {
-	s.filter = filter
+	s.filter = s.filter.And(filter)
 	return s
 }
 
