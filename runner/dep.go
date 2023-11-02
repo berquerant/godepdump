@@ -99,6 +99,10 @@ func (r *ListDeps) Run(ctx context.Context) error {
 				return r
 			}
 			r.Def.Pkg = display.NewPackageFromTypes(defPkg)
+			if pkg, ok := loader.GetByPkgPath(r.Def.Pkg.Path); ok {
+				r.Def.Pos = display.NewPosition(useNode.Obj().Pos(), pkg.Fset)
+			}
+
 			{
 				decl, err := builder.Build(r.Def.Pkg.Path, useNode.Obj().Pos())
 				if err != nil {
